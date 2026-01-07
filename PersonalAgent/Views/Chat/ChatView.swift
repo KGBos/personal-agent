@@ -43,6 +43,10 @@ struct ChatView: View {
             isInputFocused = true
         }
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                ModelSelectorView(settingsManager: viewModel.settingsManager)
+            }
+
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     viewModel.clearConversation()
@@ -64,8 +68,13 @@ struct ChatView: View {
                         emptyStateView
                     } else {
                         ForEach(viewModel.messages) { message in
-                            MessageBubbleView(message: message)
-                                .id(message.id)
+                            MessageBubbleView(
+                                message: message,
+                                onRegenerate: (message.id == viewModel.messages.last?.id && message.role == .assistant) ? {
+                                    viewModel.regenerateLastResponse()
+                                } : nil
+                            )
+                            .id(message.id)
                         }
 
                         // Streaming text

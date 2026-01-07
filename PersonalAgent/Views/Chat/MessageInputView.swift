@@ -20,7 +20,7 @@ struct MessageInputView: View {
             // Text Input
             TextField("Message...", text: $text, axis: .vertical)
                 .textFieldStyle(.plain)
-                .lineLimit(1...6)
+                .lineLimit(1...8)
                 .focused($isFocused)
                 .onSubmit {
                     if !isLoading && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -28,6 +28,8 @@ struct MessageInputView: View {
                     }
                 }
                 .submitLabel(.send)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
 
             // Send/Cancel Button
             Button {
@@ -37,30 +39,34 @@ struct MessageInputView: View {
                     onSend()
                 }
             } label: {
-                Image(systemName: isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(buttonColor)
+                Image(systemName: isLoading ? "stop.fill" : "arrow.up")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(buttonColor)
+                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .disabled(!isLoading && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .keyboardShortcut(.return, modifiers: .command)
         }
-        .padding(12)
-        .background(Color(.textBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .padding(14)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 26))
+        .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(.separatorColor), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 26)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 1)
         )
     }
 
     private var buttonColor: Color {
         if isLoading {
-            return .red
+            return .primary
         } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return .gray
+            return Color(nsColor: .disabledControlTextColor)
         } else {
-            return .accentColor
+            return .primary
         }
     }
 }
