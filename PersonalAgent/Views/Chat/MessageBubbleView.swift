@@ -9,10 +9,13 @@ import SwiftUI
 
 struct MessageBubbleView: View {
     let message: Message
+    var onRegenerate: (() -> Void)? = nil
 
     var body: some View {
-        HStack {
-            if message.role == .user {
+        HStack(alignment: .top, spacing: 12) {
+            if message.role != .user {
+                avatarView
+            } else {
                 Spacer(minLength: 60)
             }
 
@@ -22,11 +25,41 @@ struct MessageBubbleView: View {
                 Text(message.timestamp, style: .time)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 4)
             }
 
-            if message.role != .user {
+            if message.role == .user {
+                avatarView
+            } else {
                 Spacer(minLength: 60)
             }
+        }
+        .padding(.horizontal, 8)
+    }
+
+    @ViewBuilder
+    private var avatarView: some View {
+        if message.role == .user {
+            Image(systemName: "person.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+        } else if message.role == .assistant {
+            Image(systemName: "sparkles")
+                .symbolRenderingMode(.hierarchical)
+                .font(.title2)
+                .foregroundStyle(.orange)
+                .padding(6)
+                .background(Color.orange.opacity(0.1))
+                .clipShape(Circle())
+        } else if message.role == .tool {
+            Image(systemName: "gear")
+                .font(.title2)
+                .foregroundStyle(.gray)
+        } else {
+            // System
+            Image(systemName: "desktopcomputer")
+                .font(.title2)
+                .foregroundStyle(.gray)
         }
     }
 
@@ -34,11 +67,9 @@ struct MessageBubbleView: View {
     private var contentView: some View {
         switch message.content {
         case .text(let text):
-            Text(text)
-                .textSelection(.enabled)
+            MarkdownMessageView(content: text, role: message.role)
                 .padding(12)
                 .background(backgroundColor)
-                .foregroundStyle(foregroundColor)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
         case .toolCall(let call):
@@ -47,6 +78,34 @@ struct MessageBubbleView: View {
         case .toolResult(let result):
             ToolResultBubble(result: result)
         }
+    }
+    .contextMenu {
+        Button {
+            copyToClipboard(content: message.content)
+        } label: {
+            Label("Copy", systemImage: "doc.on.doc")
+        }
+
+        if message.role == .assistant {
+            Button {
+                onRegenerate?()
+            } label: {
+                Label("Regenerate", systemImage: "arrow.clockwise")
+            }
+        }
+    }
+
+    private func copyToClipboard(content: MessageContent) {
+        let text: String
+        switch content {
+        case .text(let str): text = str
+        case .toolCall(let call): text = "Tool Call: \(call.name)\nArguments: \(call.arguments)"
+        case .toolResult(let res): text = "Tool Result: \(res.content)"
+        }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
     }
 
     private var backgroundColor: Color {
