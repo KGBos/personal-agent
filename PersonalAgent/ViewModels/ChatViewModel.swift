@@ -30,7 +30,7 @@ final class ChatViewModel {
     // MARK: - Dependencies
 
     private let aiServiceFactory: AIServiceFactory
-    private let settingsManager: SettingsManager
+    let settingsManager: SettingsManager
     private let conversationStore: ConversationStore
     private let toolRegistry: ToolRegistry
     private let toolExecutor: ToolExecutor
@@ -143,6 +143,17 @@ final class ChatViewModel {
 
     func dismissError() {
         error = nil
+    }
+
+    func regenerateLastResponse() {
+        guard !isLoading, let lastMessage = messages.last, lastMessage.role == .assistant else { return }
+
+        // Remove last assistant message
+        messages.removeLast()
+        saveCurrentConversation()
+
+        // Re-generate response
+        generateResponse()
     }
 
     // MARK: - Persistence
