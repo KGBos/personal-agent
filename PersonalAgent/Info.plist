@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>PersonalAgent needs access to your calendar to help manage events and appointments.</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>PersonalAgent needs access to your reminders to help you manage tasks.</string>
+    <key>NSContactsUsageDescription</key>
+    <string>PersonalAgent needs access to your contacts to help you find and manage contact information.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>PersonalAgent uses automation to control other apps and perform system tasks.</string>
+</dict>
+</plist>
