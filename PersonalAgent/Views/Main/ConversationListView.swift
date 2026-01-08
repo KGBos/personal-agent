@@ -124,7 +124,8 @@ struct ConversationRow: View {
     let toolRegistry = ToolRegistry()
     let permissionsManager = PermissionsManager()
     let toolExecutor = ToolExecutor(registry: toolRegistry, permissionsManager: permissionsManager)
-    
+    let tokenTracker = TokenTracker()
+
     ConversationListView(
         conversationStore: store,
         chatViewModel: ChatViewModel(
@@ -132,7 +133,8 @@ struct ConversationRow: View {
             settingsManager: settingsManager,
             conversationStore: store,
             toolRegistry: toolRegistry,
-            toolExecutor: toolExecutor
+            toolExecutor: toolExecutor,
+            tokenTracker: tokenTracker
         ),
         settingsManager: settingsManager
     )

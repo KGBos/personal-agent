@@ -111,7 +111,7 @@ struct SettingsView: View {
                         .frame(minHeight: 100)
 
                     Button("Reset to Default") {
-                        settingsManager.systemPrompt = settingsManager.defaultSystemPrompt
+                        settingsManager.systemPrompt = SettingsManager.defaultSystemPrompt
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)

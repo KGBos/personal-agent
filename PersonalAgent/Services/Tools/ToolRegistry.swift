@@ -47,5 +47,14 @@ final class ToolRegistry {
         // System
         register(ShellTool())
         register(AppleScriptTool())
+
+        // Web
+        register(WebBrowsingTool())
+
+        // Weather
+        register(WeatherTool())
+
+        // Image Generation (Apple Image Playground)
+        register(ImageGenerationTool())
     }
 }

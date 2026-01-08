@@ -110,6 +110,11 @@ actor OpenAIService: AIService {
             "stream": stream
         ]
 
+        // Request usage info for streaming responses
+        if stream {
+            body["stream_options"] = ["include_usage": true]
+        }
+
         if !tools.isEmpty {
             body["tools"] = tools.map { tool in
                 [
@@ -210,7 +215,26 @@ actor OpenAIService: AIService {
             toolCalls = toolCallsArray.compactMap { parseToolCall($0) }
         }
 
-        return AIResponse(text: text, toolCalls: toolCalls, finishReason: finishReason)
+        // Parse usage info
+        let usage = parseUsage(from: json)
+
+        return AIResponse(text: text, toolCalls: toolCalls, finishReason: finishReason, usage: usage)
+    }
+
+    private func parseUsage(from json: [String: Any]) -> ResponseUsage? {
+        guard let usage = json["usage"] as? [String: Any],
+              let promptTokens = usage["prompt_tokens"] as? Int,
+              let completionTokens = usage["completion_tokens"] as? Int else {
+            return nil
+        }
+
+        let totalTokens = usage["total_tokens"] as? Int ?? (promptTokens + completionTokens)
+        return ResponseUsage(
+            promptTokens: promptTokens,
+            completionTokens: completionTokens,
+            totalTokens: totalTokens,
+            model: model
+        )
     }
 
     private func parseToolCall(_ dict: [String: Any]) -> ToolCall? {
@@ -259,15 +283,25 @@ actor OpenAIService: AIService {
         }
 
         guard let data = jsonString.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = json["choices"] as? [[String: Any]],
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        // Check for usage-only chunk (sent at end with stream_options.include_usage)
+        if let usage = parseUsage(from: json) {
+            return .complete(with: usage)
+        }
+
+        guard let choices = json["choices"] as? [[String: Any]],
               let firstChoice = choices.first else {
             return nil
         }
 
         // Check for finish reason
         if let finishReason = firstChoice["finish_reason"] as? String, !finishReason.isEmpty {
-            return .complete
+            // Parse usage if included in this chunk
+            let usage = parseUsage(from: json)
+            return .complete(with: usage)
         }
 
         guard let delta = firstChoice["delta"] as? [String: Any] else {

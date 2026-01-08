@@ -14,6 +14,7 @@ struct PersonalAgentApp: App {
 
     private let dataController = DataController.shared
     @State private var settingsManager = SettingsManager()
+    @State private var tokenTracker = TokenTracker()
     @State private var conversationStore: ConversationStore?
     @State private var chatViewModel: ChatViewModel?
 
@@ -24,7 +25,8 @@ struct PersonalAgentApp: App {
                     ContentView(
                         settingsManager: settingsManager,
                         chatViewModel: chatViewModel,
-                        conversationStore: conversationStore
+                        conversationStore: conversationStore,
+                        tokenTracker: tokenTracker
                     )
                 } else {
                     ProgressView("Loading...")
@@ -69,7 +71,8 @@ struct PersonalAgentApp: App {
             settingsManager: settingsManager,
             conversationStore: store,
             toolRegistry: toolRegistry,
-            toolExecutor: toolExecutor
+            toolExecutor: toolExecutor,
+            tokenTracker: tokenTracker
         )
 
         self.chatViewModel = viewModel

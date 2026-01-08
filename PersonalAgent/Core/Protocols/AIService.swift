@@ -7,11 +7,27 @@
 
 import Foundation
 
+/// Token usage information from API response
+struct ResponseUsage: Sendable, Equatable {
+    let promptTokens: Int
+    let completionTokens: Int
+    let totalTokens: Int
+    let model: String
+
+    init(promptTokens: Int, completionTokens: Int, totalTokens: Int = 0, model: String = "") {
+        self.promptTokens = promptTokens
+        self.completionTokens = completionTokens
+        self.totalTokens = totalTokens > 0 ? totalTokens : promptTokens + completionTokens
+        self.model = model
+    }
+}
+
 /// Response from AI that may include text and/or tool calls
 struct AIResponse: Sendable {
     let text: String?
     let toolCalls: [ToolCall]
     let finishReason: FinishReason
+    let usage: ResponseUsage?
 
     enum FinishReason: Sendable {
         case complete
@@ -20,10 +36,11 @@ struct AIResponse: Sendable {
         case cancelled
     }
 
-    init(text: String?, toolCalls: [ToolCall] = [], finishReason: FinishReason = .complete) {
+    init(text: String?, toolCalls: [ToolCall] = [], finishReason: FinishReason = .complete, usage: ResponseUsage? = nil) {
         self.text = text
         self.toolCalls = toolCalls
         self.finishReason = finishReason
+        self.usage = usage
     }
 }
 
@@ -32,15 +49,21 @@ struct StreamingChunk: Sendable {
     let delta: String?
     let toolCallDelta: ToolCallDelta?
     let isComplete: Bool
+    let usage: ResponseUsage?
 
-    init(delta: String? = nil, toolCallDelta: ToolCallDelta? = nil, isComplete: Bool = false) {
+    nonisolated init(delta: String? = nil, toolCallDelta: ToolCallDelta? = nil, isComplete: Bool = false, usage: ResponseUsage? = nil) {
         self.delta = delta
         self.toolCallDelta = toolCallDelta
         self.isComplete = isComplete
+        self.usage = usage
     }
 
-    static var complete: StreamingChunk {
+    nonisolated static var complete: StreamingChunk {
         StreamingChunk(isComplete: true)
+    }
+
+    nonisolated static func complete(with usage: ResponseUsage?) -> StreamingChunk {
+        StreamingChunk(isComplete: true, usage: usage)
     }
 }
 
@@ -51,7 +74,7 @@ struct ToolCallDelta: Sendable {
     let name: String?
     let argumentsDelta: String
 
-    init(index: Int, id: String? = nil, name: String? = nil, argumentsDelta: String = "") {
+    nonisolated init(index: Int, id: String? = nil, name: String? = nil, argumentsDelta: String = "") {
         self.index = index
         self.id = id
         self.name = name

@@ -19,7 +19,11 @@ final class ChatViewModel {
     var streamingText: String = ""
     var error: AIError?
     var pendingToolCalls: [ToolCall] = []
-    
+
+    // Image Playground state
+    var showingImagePlayground: Bool = false
+    var imagePlaygroundPrompt: String = ""
+
     // Internal state for tool call assembly
     private var toolCallDeltas: [Int: (id: String?, name: String?, arguments: String)] = [:]
 
@@ -34,6 +38,7 @@ final class ChatViewModel {
     private let conversationStore: ConversationStore
     private let toolRegistry: ToolRegistry
     private let toolExecutor: ToolExecutor
+    let tokenTracker: TokenTracker
 
     // MARK: - Private State
 
@@ -47,13 +52,15 @@ final class ChatViewModel {
         settingsManager: SettingsManager,
         conversationStore: ConversationStore,
         toolRegistry: ToolRegistry,
-        toolExecutor: ToolExecutor
+        toolExecutor: ToolExecutor,
+        tokenTracker: TokenTracker
     ) {
         self.aiServiceFactory = aiServiceFactory
         self.settingsManager = settingsManager
         self.conversationStore = conversationStore
         self.toolRegistry = toolRegistry
         self.toolExecutor = toolExecutor
+        self.tokenTracker = tokenTracker
     }
 
     // MARK: - Computed Properties
@@ -179,18 +186,33 @@ final class ChatViewModel {
         streamingTask = Task {
             do {
                 let tools = await toolRegistry.tools
+                var lastUsage: ResponseUsage?
+
                 for try await chunk in aiService.stream(messages: messages, tools: tools, systemPrompt: systemPrompt) {
                     if Task.isCancelled { break }
 
                     if let delta = chunk.delta {
                         streamingText += delta
                     }
-                    
+
                     if let toolDelta = chunk.toolCallDelta {
                         processToolCallDelta(toolDelta)
                     }
 
+                    // Capture usage from final chunk
+                    if let usage = chunk.usage {
+                        lastUsage = usage
+                    }
+
                     if chunk.isComplete {
+                        // Record token usage if available
+                        if let usage = lastUsage {
+                            tokenTracker.record(
+                                promptTokens: usage.promptTokens,
+                                completionTokens: usage.completionTokens,
+                                model: usage.model.isEmpty ? settingsManager.openAIModel : usage.model
+                            )
+                        }
                         finalizeResponse()
                         break
                     }
@@ -296,8 +318,29 @@ final class ChatViewModel {
     }
 
     private func executeTool(_ toolCall: ToolCall) async {
+        // Special handling for image generation tool
+        if toolCall.name == "generate_image" {
+            if let prompt = toolCall.arguments["prompt"]?.value as? String {
+                imagePlaygroundPrompt = prompt
+                showingImagePlayground = true
+
+                // Add a message indicating Image Playground is opening
+                let toolResultMessage = Message(
+                    role: .tool,
+                    content: .toolResult(ToolResult(
+                        toolCallId: toolCall.id,
+                        content: "Opening Image Playground with prompt: \"\(prompt)\". Please generate and save your image.",
+                        isError: false
+                    ))
+                )
+                messages.append(toolResultMessage)
+                saveCurrentConversation()
+                return
+            }
+        }
+
         let result = await toolExecutor.execute(toolCall: toolCall)
-        
+
         let toolResultMessage = Message(
             role: .tool,
             content: .toolResult(ToolResult(
@@ -306,11 +349,27 @@ final class ChatViewModel {
                 isError: result.isError
             ))
         )
-        
+
         messages.append(toolResultMessage)
         saveCurrentConversation()
-        
+
         // Continue generation after tool execution
+        generateResponse()
+    }
+
+    // MARK: - Image Playground
+
+    func handleImagePlaygroundResult(_ imageURL: URL?) {
+        showingImagePlayground = false
+
+        if let imageURL = imageURL {
+            // Add message about saved image
+            let message = Message.assistant("Image saved to: \(imageURL.path)")
+            messages.append(message)
+            saveCurrentConversation()
+        }
+
+        // Continue the conversation
         generateResponse()
     }
 

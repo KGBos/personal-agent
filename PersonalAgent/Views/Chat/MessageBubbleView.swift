@@ -65,32 +65,34 @@ struct MessageBubbleView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        switch message.content {
-        case .text(let text):
-            MarkdownMessageView(content: text, role: message.role)
-                .padding(12)
-                .background(backgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+        Group {
+            switch message.content {
+            case .text(let text):
+                MarkdownMessageView(content: text, role: message.role)
+                    .padding(12)
+                    .background(backgroundColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
-        case .toolCall(let call):
-            ToolCallBubble(toolCall: call)
+            case .toolCall(let call):
+                ToolCallBubble(toolCall: call)
 
-        case .toolResult(let result):
-            ToolResultBubble(result: result)
+            case .toolResult(let result):
+                ToolResultBubble(result: result)
+            }
         }
-    }
-    .contextMenu {
-        Button {
-            copyToClipboard(content: message.content)
-        } label: {
-            Label("Copy", systemImage: "doc.on.doc")
-        }
-
-        if message.role == .assistant {
+        .contextMenu {
             Button {
-                onRegenerate?()
+                copyToClipboard(content: message.content)
             } label: {
-                Label("Regenerate", systemImage: "arrow.clockwise")
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+
+            if message.role == .assistant {
+                Button {
+                    onRegenerate?()
+                } label: {
+                    Label("Regenerate", systemImage: "arrow.clockwise")
+                }
             }
         }
     }
@@ -130,32 +132,94 @@ struct MessageBubbleView: View {
 
 struct ToolCallBubble: View {
     let toolCall: ToolCall
+    @State private var isExpanded = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "gear")
-                .foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 8) {
+            // Header
+            HStack(spacing: 8) {
+                Image(systemName: "gearshape.fill")
+                    .foregroundStyle(.orange)
+                    .symbolEffect(.pulse.byLayer, options: .repeating)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Calling: \(toolCall.name)")
-                    .font(.caption)
-                    .fontWeight(.medium)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tool Call")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text(toolCall.name)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .fontDesign(.monospaced)
+                }
+
+                Spacer()
 
                 if !toolCall.arguments.isEmpty {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // Arguments (expandable)
+            if !toolCall.arguments.isEmpty {
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(toolCall.arguments.keys.sorted()), id: \.self) { key in
+                            HStack(alignment: .top, spacing: 4) {
+                                Text("\(key):")
+                                    .font(.caption2)
+                                    .fontDesign(.monospaced)
+                                    .foregroundStyle(.secondary)
+
+                                Text(formatValue(toolCall.arguments[key]?.value))
+                                    .font(.caption2)
+                                    .fontDesign(.monospaced)
+                            }
+                        }
+                    }
+                    .padding(8)
+                    .background(Color.black.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                } else {
                     Text(argumentsSummary)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(1)
                 }
             }
         }
-        .padding(10)
-        .background(Color.orange.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.orange.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color.orange.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
     private var argumentsSummary: String {
-        toolCall.arguments.map { "\($0.key): \($0.value.value)" }.joined(separator: ", ")
+        let summary = toolCall.arguments.map { "\($0.key): \(formatValue($0.value.value))" }.joined(separator: ", ")
+        return summary.count > 50 ? String(summary.prefix(47)) + "..." : summary
+    }
+
+    private func formatValue(_ value: Any?) -> String {
+        guard let value = value else { return "nil" }
+        if let str = value as? String {
+            return "\"\(str)\""
+        }
+        return String(describing: value)
     }
 }
 
@@ -163,19 +227,69 @@ struct ToolCallBubble: View {
 
 struct ToolResultBubble: View {
     let result: ToolResult
+    @State private var isExpanded = false
+
+    private var isLongContent: Bool {
+        result.content.count > 200 || result.content.contains("\n")
+    }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: result.isError ? "exclamationmark.triangle" : "checkmark.circle")
-                .foregroundStyle(result.isError ? .red : .green)
+        VStack(alignment: .leading, spacing: 8) {
+            // Header
+            HStack(spacing: 8) {
+                Image(systemName: result.isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    .foregroundStyle(result.isError ? .red : .green)
 
-            Text(result.content)
-                .font(.caption)
-                .lineLimit(5)
+                Text(result.isError ? "Error" : "Result")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                if isLongContent {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    } label: {
+                        Text(isExpanded ? "Show Less" : "Show More")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // Content
+            if isExpanded || !isLongContent {
+                Text(result.content)
+                    .font(.caption)
+                    .fontDesign(.monospaced)
+                    .textSelection(.enabled)
+            } else {
+                Text(truncatedContent)
+                    .font(.caption)
+                    .fontDesign(.monospaced)
+                    .lineLimit(3)
+            }
         }
-        .padding(10)
-        .background((result.isError ? Color.red : Color.green).opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill((result.isError ? Color.red : Color.green).opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder((result.isError ? Color.red : Color.green).opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+
+    private var truncatedContent: String {
+        if result.content.count > 150 {
+            return String(result.content.prefix(147)) + "..."
+        }
+        return result.content
     }
 }
 

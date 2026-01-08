@@ -6,10 +6,14 @@
 //
 
 import SwiftUI
+#if canImport(ImagePlayground)
+import ImagePlayground
+#endif
 
 struct ChatView: View {
     @Bindable var viewModel: ChatViewModel
     @FocusState private var isInputFocused: Bool
+    @Environment(\.supportsImagePlayground) private var supportsImagePlayground
 
     var body: some View {
         VStack(spacing: 0) {
@@ -42,6 +46,14 @@ struct ChatView: View {
         .onAppear {
             isInputFocused = true
         }
+        #if canImport(ImagePlayground)
+        .imagePlaygroundSheet(
+            isPresented: $viewModel.showingImagePlayground,
+            concepts: [.text(viewModel.imagePlaygroundPrompt)]
+        ) { url in
+            viewModel.handleImagePlaygroundResult(url)
+        }
+        #endif
         .toolbar {
             ToolbarItem(placement: .principal) {
                 ModelSelectorView(settingsManager: viewModel.settingsManager)
@@ -178,17 +190,19 @@ struct ChatView: View {
 
 #Preview {
     let settingsManager = SettingsManager()
+    let tokenTracker = TokenTracker()
     let dataController = DataController.preview
     let store = ConversationStore(modelContext: dataController.modelContext)
     let toolRegistry = ToolRegistry()
     let permissionsManager = PermissionsManager()
     let toolExecutor = ToolExecutor(registry: toolRegistry, permissionsManager: permissionsManager)
-    
+
     ChatView(viewModel: ChatViewModel(
         aiServiceFactory: AIServiceFactory(settingsManager: settingsManager),
         settingsManager: settingsManager,
         conversationStore: store,
         toolRegistry: toolRegistry,
-        toolExecutor: toolExecutor
+        toolExecutor: toolExecutor,
+        tokenTracker: tokenTracker
     ))
 }

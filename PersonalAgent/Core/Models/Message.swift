@@ -32,13 +32,13 @@ struct ToolCall: Codable, Sendable, Identifiable, Equatable {
     let name: String
     let arguments: [String: AnyCodable]
 
-    init(id: String, name: String, arguments: [String: AnyCodable]) {
+    nonisolated init(id: String, name: String, arguments: [String: AnyCodable]) {
         self.id = id
         self.name = name
         self.arguments = arguments
     }
 
-    init(id: String, name: String, argumentsDict: [String: Any]) {
+    nonisolated init(id: String, name: String, argumentsDict: [String: Any]) {
         self.id = id
         self.name = name
         self.arguments = argumentsDict.mapValues { AnyCodable($0) }

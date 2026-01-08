@@ -7,10 +7,10 @@
 
 import Foundation
 
-struct AnyCodable: Codable, Sendable, Equatable {
+struct AnyCodable: Codable, @unchecked Sendable, Equatable {
     let value: Any
 
-    init(_ value: Any) {
+    nonisolated init(_ value: Any) {
         self.value = value
     }
 
