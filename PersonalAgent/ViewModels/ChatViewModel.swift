@@ -21,8 +21,8 @@ final class ChatViewModel {
     var pendingToolCalls: [ToolCall] = []
 
     // Image Playground state
-    var showingImagePlayground: Bool = false
-    var imagePlaygroundPrompt: String = ""
+    // Image Playground handler
+    let imageGenerationHandler = ImageGenerationHandler()
 
     // Internal state for tool call assembly
     private var toolCallDeltas: [Int: (id: String?, name: String?, arguments: String)] = [:]
@@ -61,6 +61,29 @@ final class ChatViewModel {
         self.toolRegistry = toolRegistry
         self.toolExecutor = toolExecutor
         self.tokenTracker = tokenTracker
+
+        setupHandlers()
+    }
+
+    private func setupHandlers() {
+        imageGenerationHandler.onImageSaved = { [weak self] url in
+            guard let self else { return }
+
+            // Add message about saved image
+            let message = Message.assistant("Image saved to: \(url.path)")
+            self.messages.append(message)
+            self.saveCurrentConversation()
+
+            // Continue the conversation
+            self.generateResponse()
+        }
+
+        imageGenerationHandler.onDismiss = { [weak self] in
+            guard let self else { return }
+            // Just continue generation if dismissed without image, effectively considering it a completed step or maybe we should add a "cancelled" result?
+            // For now, let's treat it as continue.
+            self.generateResponse()
+        }
     }
 
     // MARK: - Computed Properties
@@ -152,15 +175,20 @@ final class ChatViewModel {
         error = nil
     }
 
-    func regenerateLastResponse() {
-        guard !isLoading, let lastMessage = messages.last, lastMessage.role == .assistant else { return }
+    func retryLastAction() {
+        guard !isLoading else { return }
 
-        // Remove last assistant message
-        messages.removeLast()
-        saveCurrentConversation()
+        guard let lastMessage = messages.last else { return }
 
-        // Re-generate response
-        generateResponse()
+        if lastMessage.role == .assistant {
+            // Remove last assistant message to "regenerate"
+            messages.removeLast()
+            saveCurrentConversation()
+            generateResponse()
+        } else if lastMessage.role == .user {
+            // "Retry" the user's last message by just triggering generation again
+            generateResponse()
+        }
     }
 
     // MARK: - Persistence
@@ -318,25 +346,19 @@ final class ChatViewModel {
     }
 
     private func executeTool(_ toolCall: ToolCall) async {
-        // Special handling for image generation tool
-        if toolCall.name == "generate_image" {
-            if let prompt = toolCall.arguments["prompt"]?.value as? String {
-                imagePlaygroundPrompt = prompt
-                showingImagePlayground = true
-
-                // Add a message indicating Image Playground is opening
-                let toolResultMessage = Message(
-                    role: .tool,
-                    content: .toolResult(ToolResult(
-                        toolCallId: toolCall.id,
-                        content: "Opening Image Playground with prompt: \"\(prompt)\". Please generate and save your image.",
-                        isError: false
-                    ))
-                )
-                messages.append(toolResultMessage)
-                saveCurrentConversation()
-                return
-            }
+        // Delegate to ImageGenerationHandler
+        if imageGenerationHandler.handle(toolCall: toolCall) {
+            let toolResultMessage = Message(
+                role: .tool,
+                content: .toolResult(ToolResult(
+                    toolCallId: toolCall.id,
+                    content: "Opening Image Playground with prompt: \"\(imageGenerationHandler.prompt)\". Please generate and save your image.",
+                    isError: false
+                ))
+            )
+            messages.append(toolResultMessage)
+            saveCurrentConversation()
+            return
         }
 
         let result = await toolExecutor.execute(toolCall: toolCall)
@@ -354,22 +376,6 @@ final class ChatViewModel {
         saveCurrentConversation()
 
         // Continue generation after tool execution
-        generateResponse()
-    }
-
-    // MARK: - Image Playground
-
-    func handleImagePlaygroundResult(_ imageURL: URL?) {
-        showingImagePlayground = false
-
-        if let imageURL = imageURL {
-            // Add message about saved image
-            let message = Message.assistant("Image saved to: \(imageURL.path)")
-            messages.append(message)
-            saveCurrentConversation()
-        }
-
-        // Continue the conversation
         generateResponse()
     }
 

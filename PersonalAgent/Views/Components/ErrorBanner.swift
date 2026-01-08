@@ -10,6 +10,7 @@ import SwiftUI
 struct ErrorBanner: View {
     let error: AIError
     let onDismiss: () -> Void
+    var onRetry: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -22,6 +23,15 @@ struct ErrorBanner: View {
                 .lineLimit(2)
 
             Spacer()
+
+            if let onRetry {
+                Button("Retry") {
+                    onRetry()
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.bordered)
+                .tint(.red)
+            }
 
             Button {
                 onDismiss()
