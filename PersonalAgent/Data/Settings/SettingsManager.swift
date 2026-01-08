@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Observation
 
 @MainActor
 @Observable
@@ -27,15 +28,8 @@ final class SettingsManager {
     // MARK: - AI Provider Settings
 
     var selectedProvider: AIProvider {
-        get {
-            guard let rawValue = defaults.string(forKey: Keys.selectedProvider),
-                  let provider = AIProvider(rawValue: rawValue) else {
-                return .openAI
-            }
-            return provider
-        }
-        set {
-            defaults.set(newValue.rawValue, forKey: Keys.selectedProvider)
+        didSet {
+            defaults.set(selectedProvider.rawValue, forKey: Keys.selectedProvider)
         }
     }
 
@@ -53,33 +47,20 @@ final class SettingsManager {
     }
 
     var appleIntelligenceMode: AppleIntelligenceMode {
-        get {
-            guard let rawValue = defaults.string(forKey: Keys.appleIntelligenceMode),
-                  let mode = AppleIntelligenceMode(rawValue: rawValue) else {
-                return .onDevice
-            }
-            return mode
-        }
-        set {
-            defaults.set(newValue.rawValue, forKey: Keys.appleIntelligenceMode)
+        didSet {
+            defaults.set(appleIntelligenceMode.rawValue, forKey: Keys.appleIntelligenceMode)
         }
     }
 
     var openAIModel: String {
-        get {
-            defaults.string(forKey: Keys.openAIModel) ?? "gpt-4o"
-        }
-        set {
-            defaults.set(newValue, forKey: Keys.openAIModel)
+        didSet {
+            defaults.set(openAIModel, forKey: Keys.openAIModel)
         }
     }
 
     var systemPrompt: String {
-        get {
-            defaults.string(forKey: Keys.systemPrompt) ?? defaultSystemPrompt
-        }
-        set {
-            defaults.set(newValue, forKey: Keys.systemPrompt)
+        didSet {
+            defaults.set(systemPrompt, forKey: Keys.systemPrompt)
         }
     }
 
@@ -96,6 +77,29 @@ final class SettingsManager {
     }
 
     init() {
+        // Load Selected Provider
+        if let savedProvider = defaults.string(forKey: Keys.selectedProvider),
+           let provider = AIProvider(rawValue: savedProvider) {
+            self.selectedProvider = provider
+        } else {
+            self.selectedProvider = .openAI
+        }
+
+        // Load Apple Intelligence Mode
+        if let savedMode = defaults.string(forKey: Keys.appleIntelligenceMode),
+           let mode = AppleIntelligenceMode(rawValue: savedMode) {
+            self.appleIntelligenceMode = mode
+        } else {
+            self.appleIntelligenceMode = .onDevice
+        }
+
+        // Load OpenAI Model
+        self.openAIModel = defaults.string(forKey: Keys.openAIModel) ?? "gpt-4o"
+
+        // Load System Prompt
+        self.systemPrompt = defaults.string(forKey: Keys.systemPrompt) ?? Self.defaultSystemPrompt
+
+        // Load API Key
         self.openAIAPIKey = keychain.get(Keys.openAIAPIKey) ?? ""
     }
 
@@ -105,7 +109,7 @@ final class SettingsManager {
 
     // MARK: - Defaults
 
-    var defaultSystemPrompt: String {
+    static var defaultSystemPrompt: String {
         """
         You are a helpful personal assistant. You can help the user manage their calendar, \
         reminders, contacts, files, and perform system tasks. Be concise and helpful.
