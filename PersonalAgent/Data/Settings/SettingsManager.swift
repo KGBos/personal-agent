@@ -12,6 +12,8 @@ import Observation
 @MainActor
 @Observable
 final class SettingsManager {
+    static let shared = SettingsManager()
+
     // MARK: - Keys
     private enum Keys {
         static let selectedProvider = "selectedProvider"
@@ -19,6 +21,7 @@ final class SettingsManager {
         static let systemPrompt = "systemPrompt"
         static let openAIAPIKey = "openai_api_key"
         static let appleIntelligenceMode = "appleIntelligenceMode"
+        static let defaultCalendarName = "defaultCalendarName"
     }
 
     // MARK: - Storage
@@ -64,6 +67,14 @@ final class SettingsManager {
         }
     }
 
+    // MARK: - Calendar Settings
+    
+    var defaultCalendarName: String? {
+        didSet {
+            defaults.set(defaultCalendarName, forKey: Keys.defaultCalendarName)
+        }
+    }
+
     // MARK: - Secure Storage (API Keys)
 
     var openAIAPIKey: String = "" {
@@ -101,6 +112,9 @@ final class SettingsManager {
 
         // Load API Key
         self.openAIAPIKey = keychain.get(Keys.openAIAPIKey) ?? ""
+        
+        // Load Default Calendar
+        self.defaultCalendarName = defaults.string(forKey: Keys.defaultCalendarName)
     }
 
     var hasOpenAIAPIKey: Bool {
