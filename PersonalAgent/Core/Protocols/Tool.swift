@@ -3,9 +3,9 @@ import Foundation
 /// Schema for tool parameters (JSON Schema subset)
 struct ToolParameterSchema: Codable, Sendable {
     let type: String  // "object"
-    let description: String?
-    let properties: [String: PropertySchema]?
-    let required: [String]?
+    var description: String? = nil
+    var properties: [String: PropertySchema]? = nil
+    var required: [String]? = nil
 
     final class PropertySchema: Codable, Sendable {
         let type: String

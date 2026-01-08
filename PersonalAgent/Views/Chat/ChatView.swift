@@ -16,15 +16,19 @@ struct ChatView: View {
     @Environment(\.supportsImagePlayground) private var supportsImagePlayground
 
     var body: some View {
-        VStack(spacing: 0) {
+        @Bindable var imageGenHandler = viewModel.imageGenerationHandler
+        
+        return VStack(spacing: 0) {
             // Messages List
             messagesScrollView
 
             // Error Banner
             if let error = viewModel.error {
-                ErrorBanner(error: error) {
-                    viewModel.dismissError()
-                }
+                ErrorBanner(
+                    error: error,
+                    onDismiss: { viewModel.dismissError() },
+                    onRetry: { viewModel.retryLastAction() }
+                )
             }
 
             Divider()
@@ -48,10 +52,10 @@ struct ChatView: View {
         }
         #if canImport(ImagePlayground)
         .imagePlaygroundSheet(
-            isPresented: $viewModel.showingImagePlayground,
-            concepts: [.text(viewModel.imagePlaygroundPrompt)]
+            isPresented: $imageGenHandler.isPresented,
+            concepts: [.text(imageGenHandler.prompt)]
         ) { url in
-            viewModel.handleImagePlaygroundResult(url)
+            imageGenHandler.handleResult(url)
         }
         #endif
         .toolbar {
@@ -83,7 +87,7 @@ struct ChatView: View {
                             MessageBubbleView(
                                 message: message,
                                 onRegenerate: (message.id == viewModel.messages.last?.id && message.role == .assistant) ? {
-                                    viewModel.regenerateLastResponse()
+                                    viewModel.retryLastAction()
                                 } : nil
                             )
                             .id(message.id)

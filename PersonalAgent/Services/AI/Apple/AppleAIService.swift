@@ -101,7 +101,7 @@ actor AppleAIService: AIService {
                     }
 
                     // After streaming completes, check if the response contains tool calls
-                    let toolCalls = parseToolCalls(from: accumulatedText)
+                    let toolCalls = Self.parseToolCalls(from: accumulatedText)
                     for toolCall in toolCalls {
                         let delta = ToolCallDelta(
                             index: 0,
@@ -161,38 +161,88 @@ actor AppleAIService: AIService {
 
     // MARK: - Tool Call Parsing
 
-    private nonisolated func parseToolCalls(from text: String) -> [ToolCall] {
+    static nonisolated func parseToolCalls(from text: String) -> [ToolCall] {
         var toolCalls: [ToolCall] = []
-
-        // Look for ```tool blocks
-        let pattern = "```tool\\s*\\n([\\s\\S]*?)```"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return toolCalls
+        let lines = text.components(separatedBy: .newlines)
+        var insideBlock = false
+        var currentBlock = ""
+        var blockType: BlockType?
+        
+        enum BlockType {
+            case tool
+            case json
+            case unknown
         }
 
-        let range = NSRange(text.startIndex..., in: text)
-        let matches = regex.matches(in: text, options: [], range: range)
-
-        for match in matches {
-            guard let jsonRange = Range(match.range(at: 1), in: text) else { continue }
-            let jsonString = String(text[jsonRange])
-
-            guard let data = jsonString.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let toolName = json["tool"] as? String,
-                  let arguments = json["arguments"] as? [String: Any] else {
+        // Scan for potential tool blocks
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmed.hasPrefix("```") {
+                if insideBlock {
+                    // End of block
+                    if let type = blockType, (type == .tool || type == .json || type == .unknown) {
+                        if let toolCall = tryParseToolCall(from: currentBlock) {
+                            toolCalls.append(toolCall)
+                        }
+                    }
+                    insideBlock = false
+                    currentBlock = ""
+                    blockType = nil
+                } else {
+                    // Start of block
+                    insideBlock = true
+                    if trimmed.contains("tool") {
+                        blockType = .tool
+                    } else if trimmed.contains("json") {
+                        blockType = .json
+                    } else {
+                        blockType = .unknown
+                    }
+                }
                 continue
             }
-
-            let toolCall = ToolCall(
-                id: "apple-\(UUID().uuidString.prefix(8))",
-                name: toolName,
-                argumentsDict: arguments
-            )
-            toolCalls.append(toolCall)
+            
+            if insideBlock {
+                currentBlock += line + "\n"
+            }
+        }
+        
+        // If no markdown blocks were found, or we want to be very aggressive, 
+        // we could try to find standalone JSON objects, but for now we'll stick to 
+        // improving the markdown block parsing as per the plan.
+        
+        // Fallback: If no tools found, check if the entire text looks like a JSON object 
+        // and contains "tool" key, in case model forgot markdown fences.
+        if toolCalls.isEmpty {
+            if let toolCall = tryParseToolCall(from: text) {
+                toolCalls.append(toolCall)
+            }
         }
 
         return toolCalls
+    }
+    
+    private static func tryParseToolCall(from jsonString: String) -> ToolCall? {
+        let cleaned = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.hasPrefix("{") && cleaned.hasSuffix("}") else { return nil }
+        
+        guard let data = cleaned.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        
+        // Check for required fields
+        guard let toolName = json["tool"] as? String else { return nil }
+        
+        // Arguments might be missing or empty
+        let arguments = json["arguments"] as? [String: Any] ?? [:]
+        
+        return ToolCall(
+            id: "apple-\(UUID().uuidString.prefix(8))",
+            name: toolName,
+            argumentsDict: arguments
+        )
     }
 
     // MARK: - Private Helpers
