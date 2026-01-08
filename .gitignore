@@ -1,0 +1,4 @@
+# Logs
+*.log
+build_warnings.log
+test_output.log
