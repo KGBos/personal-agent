@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PersonalAgent is a Personal AI Agent app - a multi-platform Swift application (iOS, macOS, visionOS) that allows users to chat with AI and have it take actions on their behalf using tool/function calling.
+PersonalAgent is a Personal AI Agent app - a multi-platform Swift application (iOS, macOS, visionOS) that allows users to chat with AI and have it take actions on their behalf using tool/function calls.
 
-- **Bundle ID**: `com.leon.PersonalAgent`
+- **Bundle ID**: `com.kgbos.PersonalAgent`
 - **Deployment Targets**: iOS 26.2, macOS 26.2, visionOS 26.2
 - **AI Backends**: OpenAI API (implemented), Apple Foundation Models (planned)
 
@@ -27,7 +27,7 @@ PersonalAgent is a Personal AI Agent app - a multi-platform Swift application (i
 ## Architecture & Code Structure
 
 ### Project Layout
-```
+````
 PersonalAgent/
 ├── Core/
 │   ├── Models/          # Message, AIProvider, ToolCall, AnyCodable
@@ -84,19 +84,13 @@ PersonalAgent/
 
 - **Phase 1**: Foundation (COMPLETE) - Core models, OpenAI streaming, Chat UI
 - **Phase 2**: Persistence (COMPLETE) - SwiftData, conversation sidebar
-- **Phase 3**: Tool Framework (NEXT) - See HANDOFF.md for detailed guide
+- **Phase 3**: Tool Framework (NEXT)
 - **Phase 4**: Full Tool Suite (PENDING)
 - **Phase 5**: Apple Foundation Models (PENDING)
 
 ## Continuing Development
 
-See `HANDOFF.md` for:
-- Complete Phase 3 implementation guide with code
-- Tool protocol and registry patterns
-- Calendar/Reminders tool implementations
-- Permissions manager setup
-- OpenAI function calling integration
-- UI components for tool confirmation
+(References to HANDOFF.md have been removed — HANDOFF.md is deprecated.)
 
 ## Adding New Tools
 
