@@ -1,7 +1,7 @@
 //
 //  AnyCodable.swift
 //  PersonalAgent
-//  VERIFIED: Isolation fixed
+
 //
 //  Created by Leon Kuzmin on 1/7/26.
 //
