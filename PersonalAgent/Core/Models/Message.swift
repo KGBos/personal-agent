@@ -49,11 +49,13 @@ struct ToolResult: Codable, Sendable, Equatable {
     let toolCallId: String
     let content: String
     let isError: Bool
+    let isPermissionDenied: Bool
 
-    init(toolCallId: String, content: String, isError: Bool = false) {
+    init(toolCallId: String, content: String, isError: Bool = false, isPermissionDenied: Bool = false) {
         self.toolCallId = toolCallId
         self.content = content
         self.isError = isError
+        self.isPermissionDenied = isPermissionDenied
     }
 }
 

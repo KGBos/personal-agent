@@ -368,7 +368,8 @@ final class ChatViewModel {
             content: .toolResult(ToolResult(
                 toolCallId: result.toolCallId,
                 content: result.result,
-                isError: result.isError
+                isError: result.isError,
+                isPermissionDenied: result.isPermissionDenied
             ))
         )
 

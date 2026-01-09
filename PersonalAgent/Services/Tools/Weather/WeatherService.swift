@@ -1,9 +1,9 @@
 import Foundation
 import CoreLocation
+import MapKit
 
 /// Service for fetching weather data using Open-Meteo API (free, no key required)
 actor WeatherService {
-    private let geocoder = CLGeocoder()
 
     // MARK: - Public Methods
 
@@ -24,21 +24,16 @@ actor WeatherService {
     // MARK: - Private Methods
 
     private func geocodeLocation(_ location: String) async throws -> CLLocationCoordinate2D {
-        return try await withCheckedThrowingContinuation { continuation in
-            geocoder.geocodeAddressString(location) { placemarks, error in
-                if let error = error {
-                    continuation.resume(throwing: ToolError.executionFailed("Could not find location: \(error.localizedDescription)"))
-                    return
-                }
-
-                guard let placemark = placemarks?.first,
-                      let location = placemark.location else {
-                    continuation.resume(throwing: ToolError.notFound("Location not found: \(location)"))
-                    return
-                }
-
-                continuation.resume(returning: location.coordinate)
+        // Use CLGeocoder for broad OS support
+        let geocoder = CLGeocoder()
+        do {
+            let placemarks = try await geocoder.geocodeAddressString(location)
+            guard let placemark = placemarks.first, let coordinate = placemark.location?.coordinate else {
+                throw ToolError.notFound("Location not found: \(location)")
             }
+            return coordinate
+        } catch {
+            throw ToolError.executionFailed("Could not find location: \(error.localizedDescription)")
         }
     }
 
@@ -208,3 +203,4 @@ private func weatherCodeToEmoji(_ code: Int) -> String {
     default: return "🌡️"
     }
 }
+

@@ -29,6 +29,8 @@ enum PermissionStatus: Sendable {
 @MainActor
 @Observable
 final class PermissionsManager {
+    static let shared = PermissionsManager()
+    
     private let eventStore = EKEventStore()
     private let contactStore = CNContactStore()
 
@@ -36,7 +38,7 @@ final class PermissionsManager {
     var remindersStatus: PermissionStatus = .notDetermined
     var contactsStatus: PermissionStatus = .notDetermined
 
-    init() {
+    private init() {
         Task { await refreshAllStatuses() }
     }
 
@@ -62,6 +64,31 @@ final class PermissionsManager {
         let granted = try await contactStore.requestAccess(for: .contacts)
         contactsStatus = granted ? .authorized : .denied
         return granted
+    }
+    
+    /// Helper to ensure access or throw appropriate error
+    func ensureAccess(for type: PermissionType) async throws {
+        let granted: Bool
+        
+        switch type {
+        case .calendar:
+            if calendarStatus == .authorized { granted = true }
+            else { granted = try await requestCalendarAccess() }
+        case .reminders:
+            if remindersStatus == .authorized { granted = true }
+            else { granted = try await requestRemindersAccess() }
+        case .contacts:
+            if contactsStatus == .authorized { granted = true }
+            else { granted = try await requestContactsAccess() }
+        case .automation:
+            // Automation (AppleEvents) is handled by system, we can't request it explicitly in the same way usually
+            // mostly implicit on first use.
+            return
+        }
+        
+        if !granted {
+            throw ToolError.permissionDenied("\(type.displayName) access denied. Please enable it in Settings.")
+        }
     }
 
     private func mapEKStatus(_ status: EKAuthorizationStatus) -> PermissionStatus {

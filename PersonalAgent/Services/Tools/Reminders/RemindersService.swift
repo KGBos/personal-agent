@@ -5,7 +5,7 @@ actor RemindersService {
     private let eventStore = EKEventStore()
 
     func fetchReminders(completed: Bool = false) async throws -> [EKReminder] {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .reminders)
         let predicate = eventStore.predicateForReminders(in: nil)
         
         return try await withCheckedThrowingContinuation { continuation in
@@ -26,7 +26,7 @@ actor RemindersService {
         dueDate: Date? = nil,
         priority: Int = 0
     ) async throws -> String {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .reminders)
         let reminder = EKReminder(eventStore: eventStore)
         reminder.title = title
         reminder.notes = notes
@@ -47,7 +47,7 @@ actor RemindersService {
         return identifier
     }
     func completeReminder(identifier: String) async throws {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .reminders)
         guard let reminder = eventStore.calendarItem(withIdentifier: identifier) as? EKReminder else {
             throw ToolError.notFound("Reminder not found")
         }
@@ -57,27 +57,12 @@ actor RemindersService {
     }
 
     func deleteReminder(identifier: String) async throws {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .reminders)
         guard let reminder = eventStore.calendarItem(withIdentifier: identifier) as? EKReminder else {
             throw ToolError.notFound("Reminder not found")
         }
         try eventStore.remove(reminder, commit: true)
     }
 
-    private func ensureAccess() async throws {
-        let status = EKEventStore.authorizationStatus(for: .reminder)
-        switch status {
-        case .notDetermined:
-            let granted = try await eventStore.requestFullAccessToReminders()
-            if !granted {
-                throw ToolError.permissionDenied("Reminders access denied by user")
-            }
-        case .denied, .restricted, .writeOnly:
-            throw ToolError.permissionDenied("Reminders access is restricted or denied")
-        case .authorized, .fullAccess:
-            return
-        @unknown default:
-            return
-        }
-    }
+
 }

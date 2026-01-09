@@ -6,6 +6,10 @@
     <string>PersonalAgent needs access to your calendar to help manage events and appointments.</string>
     <key>NSRemindersFullAccessUsageDescription</key>
     <string>PersonalAgent needs access to your reminders to help you manage tasks.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>PersonalAgent needs access to your calendar to help manage events and appointments.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>PersonalAgent needs access to your reminders to help you manage tasks.</string>
     <key>NSContactsUsageDescription</key>
     <string>PersonalAgent needs access to your contacts to help you find and manage contact information.</string>
     <key>NSAppleEventsUsageDescription</key>

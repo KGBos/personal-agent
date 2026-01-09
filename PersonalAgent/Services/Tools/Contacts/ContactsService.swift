@@ -5,7 +5,7 @@ actor ContactsService {
     private let store = CNContactStore()
 
     func searchContacts(query: String) async throws -> [CNContact] {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .contacts)
 
         let keysToFetch: [CNKeyDescriptor] = [
             CNContactGivenNameKey as CNKeyDescriptor,
@@ -29,7 +29,7 @@ actor ContactsService {
     }
 
     func getContact(identifier: String) async throws -> CNContact {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .contacts)
 
         let keysToFetch: [CNKeyDescriptor] = [
             CNContactGivenNameKey as CNKeyDescriptor,
@@ -60,7 +60,7 @@ actor ContactsService {
         phone: String?,
         organization: String?
     ) async throws -> String {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .contacts)
 
         let contact = CNMutableContact()
         contact.givenName = givenName
@@ -82,20 +82,5 @@ actor ContactsService {
         }
     }
 
-    private func ensureAccess() async throws {
-        let status = CNContactStore.authorizationStatus(for: .contacts)
-        switch status {
-        case .notDetermined:
-            let granted = try await store.requestAccess(for: .contacts)
-            if !granted {
-                throw ToolError.permissionDenied("Contacts access denied by user")
-            }
-        case .denied, .restricted:
-            throw ToolError.permissionDenied("Contacts access is restricted or denied")
-        case .authorized, .limited:
-            return
-        @unknown default:
-            return
-        }
-    }
+
 }

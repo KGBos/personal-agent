@@ -5,7 +5,7 @@ actor CalendarService {
     private let eventStore = EKEventStore()
 
     func fetchEvents(from startDate: Date, to endDate: Date, calendarName: String? = nil) async throws -> [EKEvent] {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .calendar)
 
         let calendars: [EKCalendar]?
         if let calendarName {
@@ -31,7 +31,7 @@ actor CalendarService {
         notes: String? = nil,
         calendarName: String? = nil
     ) async throws -> String {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .calendar)
 
         let event = EKEvent(eventStore: eventStore)
         event.title = title
@@ -56,7 +56,7 @@ actor CalendarService {
     }
 
     func createCalendar(name: String, colorHex: String? = nil) async throws -> String {
-        try await ensureAccess()
+        try await PermissionsManager.shared.ensureAccess(for: .calendar)
 
         // Find a source that allows creating calendars (usually iCloud or Local)
         guard let source = findBestSource() else {
@@ -76,22 +76,7 @@ actor CalendarService {
         return newCalendar.calendarIdentifier
     }
 
-    private func ensureAccess() async throws {
-        let status = EKEventStore.authorizationStatus(for: .event)
-        switch status {
-        case .notDetermined:
-            let granted = try await eventStore.requestFullAccessToEvents()
-            if !granted {
-                throw ToolError.permissionDenied("Calendar access denied by user")
-            }
-        case .denied, .restricted, .writeOnly:
-            throw ToolError.permissionDenied("Calendar access is restricted or denied")
-        case .authorized, .fullAccess:
-            return
-        @unknown default:
-            return
-        }
-    }
+
 
     private func findBestSource() -> EKSource? {
         let sources = eventStore.sources

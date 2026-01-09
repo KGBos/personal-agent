@@ -40,7 +40,7 @@ struct ContentView: View {
     let dataController = DataController.preview
     let store = ConversationStore(modelContext: dataController.modelContext)
     let toolRegistry = ToolRegistry()
-    let permissionsManager = PermissionsManager()
+    let permissionsManager = PermissionsManager.shared
     let toolExecutor = ToolExecutor(registry: toolRegistry, permissionsManager: permissionsManager)
 
     let chatViewModel = ChatViewModel(

@@ -62,7 +62,7 @@ struct PersonalAgentApp: App {
         let toolRegistry = ToolRegistry()
         toolRegistry.registerDefaults()
 
-        let permissionsManager = PermissionsManager()
+        let permissionsManager = PermissionsManager.shared
         let toolExecutor = ToolExecutor(registry: toolRegistry, permissionsManager: permissionsManager)
 
         let aiServiceFactory = AIServiceFactory(settingsManager: settingsManager)
