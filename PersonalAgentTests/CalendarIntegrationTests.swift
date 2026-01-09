@@ -58,7 +58,7 @@ final class CalendarIntegrationTests: XCTestCase {
                      
                      // Execute the tool to actually create the calendar
                      print("🚀 Executing tool to create calendar...")
-                     let executor = ToolExecutor(registry: registry, permissionsManager: PermissionsManager())
+                     let executor = ToolExecutor(registry: registry, permissionsManager: PermissionsManager.shared)
                      let result = await executor.execute(toolCall: toolCall)
                      
                      XCTAssertFalse(result.isError)
@@ -102,7 +102,7 @@ final class CalendarIntegrationTests: XCTestCase {
                 XCTAssertNotNil(toolCall.arguments["start_date"])
                 
                 print("🚀 Executing tool to create event...")
-                let executor = ToolExecutor(registry: registry, permissionsManager: PermissionsManager())
+                let executor = ToolExecutor(registry: registry, permissionsManager: PermissionsManager.shared)
                 let result = await executor.execute(toolCall: toolCall)
 
                 XCTAssertFalse(result.isError)
@@ -163,7 +163,7 @@ final class CalendarIntegrationTests: XCTestCase {
         
         let registry = ToolRegistry()
         registry.registerDefaults()
-        let executor = ToolExecutor(registry: registry, permissionsManager: PermissionsManager())
+        let executor = ToolExecutor(registry: registry, permissionsManager: PermissionsManager.shared)
         
         // 1. Set Default
         let setDefaultCall = ToolCall(id: "set-def-1", name: "calendar_set_default", argumentsDict: ["calendar_name": "Life"])

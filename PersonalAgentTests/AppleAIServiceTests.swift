@@ -9,11 +9,7 @@ import XCTest
 @testable import PersonalAgent
 
 final class AppleAIServiceTests: XCTestCase {
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/master
     // We need to access the private parseToolCalls method.
     // Since it's private, we can't call it directly from the test module unless we make it internal
     // or use a testable import AND it's internal.
@@ -21,17 +17,9 @@ final class AppleAIServiceTests: XCTestCase {
     // For the purpose of this task and without modifying the source code visibility too much (though internal is better for testing),
     // I will assume we can modify AppleAIService to make `parseToolCalls` internal OR
     // I will test the public surface area `complete` or `stream` if possible, BUT those require mocking the LanguageModelSession which is hard (Apple framework).
-<<<<<<< HEAD
-
     // DECISION: I will reflect on the source code. modifying AppleAIService to make the parser internal and static/nonisolated is the best approach for unit testing pure logic.
     // I will include that small refactor in this step.
 
-=======
-    
-    // DECISION: I will reflect on the source code. modifying AppleAIService to make the parser internal and static/nonisolated is the best approach for unit testing pure logic.
-    // I will include that small refactor in this step.
-    
->>>>>>> origin/master
     func testStandardMarkdownBlock() {
         let input = """
         Here is the tool:
@@ -46,11 +34,7 @@ final class AppleAIServiceTests: XCTestCase {
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result.first?.name, "calculator")
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/master
     func testJSONBlock() {
         let input = """
         ```json
@@ -64,11 +48,7 @@ final class AppleAIServiceTests: XCTestCase {
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result.first?.name, "search")
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/master
     func testLooseJSON() {
         let input = """
         {
@@ -80,11 +60,7 @@ final class AppleAIServiceTests: XCTestCase {
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result.first?.name, "reminder")
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/master
     func testMixedContent() {
         let input = """
         Sure.
@@ -101,11 +77,7 @@ final class AppleAIServiceTests: XCTestCase {
         XCTAssertEqual(result[0].name, "one")
         XCTAssertEqual(result[1].name, "two")
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/master
     func testMalformed() {
         let input = """
         ```tool
