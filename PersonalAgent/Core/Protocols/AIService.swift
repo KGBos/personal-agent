@@ -51,18 +51,18 @@ struct StreamingChunk: Sendable {
     let isComplete: Bool
     let usage: ResponseUsage?
 
-    nonisolated init(delta: String? = nil, toolCallDelta: ToolCallDelta? = nil, isComplete: Bool = false, usage: ResponseUsage? = nil) {
+    init(delta: String? = nil, toolCallDelta: ToolCallDelta? = nil, isComplete: Bool = false, usage: ResponseUsage? = nil) {
         self.delta = delta
         self.toolCallDelta = toolCallDelta
         self.isComplete = isComplete
         self.usage = usage
     }
 
-    nonisolated static var complete: StreamingChunk {
+    static var complete: StreamingChunk {
         StreamingChunk(isComplete: true)
     }
 
-    nonisolated static func complete(with usage: ResponseUsage?) -> StreamingChunk {
+    static func complete(with usage: ResponseUsage?) -> StreamingChunk {
         StreamingChunk(isComplete: true, usage: usage)
     }
 }
@@ -74,7 +74,7 @@ struct ToolCallDelta: Sendable {
     let name: String?
     let argumentsDelta: String
 
-    nonisolated init(index: Int, id: String? = nil, name: String? = nil, argumentsDelta: String = "") {
+    init(index: Int, id: String? = nil, name: String? = nil, argumentsDelta: String = "") {
         self.index = index
         self.id = id
         self.name = name

@@ -86,6 +86,7 @@ actor CalendarService {
         newCalendar.source = source
         
         if let colorHex {
+            _ = colorHex
             /* 
              TODO: Implement color parsing helper for PlatformColor/CGColor if needed.
              Master branch introduced this but left it as TODO/Comment.

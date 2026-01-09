@@ -34,7 +34,7 @@ actor ToolExecutor {
 
         do {
             let arguments = toolCall.arguments
-            let args = arguments.mapValues { $0.value as Any }
+            let args = extractArguments(arguments)
             let result = try await tool.execute(arguments: args)
 
             return ExecutionResult(
@@ -72,4 +72,8 @@ actor ToolExecutor {
             )
         }
     }
+}
+
+private func extractArguments(_ arguments: [String: AnyCodable]) -> [String: Any] {
+    return arguments.mapValues { $0.value }
 }

@@ -24,14 +24,16 @@ actor WeatherService {
     // MARK: - Private Methods
 
     private func geocodeLocation(_ location: String) async throws -> CLLocationCoordinate2D {
-        // Use CLGeocoder for broad OS support
-        let geocoder = CLGeocoder()
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = location
+        let search = MKLocalSearch(request: request)
+        
         do {
-            let placemarks = try await geocoder.geocodeAddressString(location)
-            guard let placemark = placemarks.first, let coordinate = placemark.location?.coordinate else {
+            let response = try await search.start()
+            guard let mapItem = response.mapItems.first else {
                 throw ToolError.notFound("Location not found: \(location)")
             }
-            return coordinate
+            return mapItem.placemark.coordinate
         } catch {
             throw ToolError.executionFailed("Could not find location: \(error.localizedDescription)")
         }
@@ -63,7 +65,7 @@ actor WeatherService {
         let decoder = JSONDecoder()
         let apiResponse = try decoder.decode(OpenMeteoResponse.self, from: data)
 
-        return WeatherData(from: apiResponse)
+        return await WeatherData(from: apiResponse)
     }
 }
 
@@ -141,30 +143,30 @@ struct DailyForecast {
 
 // MARK: - Open-Meteo API Response
 
-struct OpenMeteoResponse: Codable {
-    let timezone: String
-    let current: CurrentResponse
-    let daily: DailyResponse
+    struct OpenMeteoResponse: Codable, Sendable {
+        let timezone: String
+        let current: CurrentResponse
+        let daily: DailyResponse
 
-    struct CurrentResponse: Codable {
-        let temperature_2m: Double
-        let relative_humidity_2m: Int
-        let apparent_temperature: Double
-        let precipitation: Double
-        let weather_code: Int
-        let wind_speed_10m: Double
-        let wind_direction_10m: Int
-    }
+        struct CurrentResponse: Codable, Sendable {
+            let temperature_2m: Double
+            let relative_humidity_2m: Int
+            let apparent_temperature: Double
+            let precipitation: Double
+            let weather_code: Int
+            let wind_speed_10m: Double
+            let wind_direction_10m: Int
+        }
 
-    struct DailyResponse: Codable {
-        let time: [String]
-        let weather_code: [Int]
-        let temperature_2m_max: [Double]
-        let temperature_2m_min: [Double]
-        let precipitation_sum: [Double]
-        let precipitation_probability_max: [Int]
+        struct DailyResponse: Codable, Sendable {
+            let time: [String]
+            let weather_code: [Int]
+            let temperature_2m_max: [Double]
+            let temperature_2m_min: [Double]
+            let precipitation_sum: [Double]
+            let precipitation_probability_max: [Int]
+        }
     }
-}
 
 // MARK: - Weather Code Helpers
 

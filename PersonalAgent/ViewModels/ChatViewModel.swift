@@ -213,7 +213,7 @@ final class ChatViewModel {
 
         streamingTask = Task {
             do {
-                let tools = await toolRegistry.tools
+                let tools = toolRegistry.tools
                 var lastUsage: ResponseUsage?
 
                 for try await chunk in aiService.stream(messages: messages, tools: tools, systemPrompt: systemPrompt) {
@@ -273,12 +273,8 @@ final class ChatViewModel {
         toolCallDeltas = [:]
 
         if !assembledToolCalls.isEmpty {
-            let assistantMessage = Message(
-                role: .assistant,
-                content: assembledToolCalls.count == 1 && (streamingText.isEmpty) ? 
-                    .toolCall(assembledToolCalls[0]) : 
-                    .text(streamingText) // Simplify: If multiple or mixed, we might need a richer message type, but roadmap says one tool call at a time mostly
-            )
+            // Prepared tool calls logic
+
             
             // For now, if we have tool calls, we add them
             if assembledToolCalls.count == 1 {
@@ -313,7 +309,7 @@ final class ChatViewModel {
 
     private func processAssembledToolCall(_ toolCall: ToolCall) {
         Task {
-            let tool = await toolRegistry.tool(named: toolCall.name)
+            let tool = toolRegistry.tool(named: toolCall.name)
             if tool?.requiresConfirmation == true {
                 pendingToolCalls.append(toolCall)
             } else {

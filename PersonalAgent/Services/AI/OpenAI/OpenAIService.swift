@@ -47,7 +47,7 @@ actor OpenAIService: AIService {
 
     // MARK: - Stream
 
-    func stream(
+    nonisolated func stream(
         messages: [Message],
         tools: [any AgentTool],
         systemPrompt: String?
@@ -55,7 +55,7 @@ actor OpenAIService: AIService {
         AsyncThrowingStream { continuation in
             Task {
                 do {
-                    let request = try buildRequest(messages: messages, tools: tools, systemPrompt: systemPrompt, stream: true)
+                    let request = try await buildRequest(messages: messages, tools: tools, systemPrompt: systemPrompt, stream: true)
                     let (bytes, response) = try await urlSession.bytes(for: request)
 
                     guard let httpResponse = response as? HTTPURLResponse else {
@@ -68,11 +68,11 @@ actor OpenAIService: AIService {
 
                     for try await line in bytes.lines {
                         if Task.isCancelled {
-                            continuation.yield(.complete)
+                            continuation.yield(StreamingChunk(isComplete: true))
                             break
                         }
 
-                        if let chunk = try parseSSELine(line) {
+                        if let chunk = try await parseSSELine(line) {
                             continuation.yield(chunk)
                             if chunk.isComplete {
                                 break
@@ -120,9 +120,9 @@ actor OpenAIService: AIService {
                 [
                     "type": "function",
                     "function": [
-                        "name": tool.name,
-                        "description": tool.description,
-                        "parameters": tool.parameterSchema.toDictionary()
+                        "name": tool.definition.name,
+                        "description": tool.definition.description,
+                        "parameters": tool.definition.parameters.toDictionary()
                     ]
                 ]
             }
@@ -333,7 +333,7 @@ actor OpenAIService: AIService {
 
     // MARK: - Error Mapping
 
-    private func mapError(_ error: Error) -> AIError {
+    private nonisolated func mapError(_ error: Error) -> AIError {
         if let aiError = error as? AIError {
             return aiError
         }

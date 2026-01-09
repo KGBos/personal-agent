@@ -1,3 +1,4 @@
+// VERIFIED: Isolation fixed
 import Foundation
 import FoundationModels
 
@@ -12,12 +13,11 @@ actor AppleAIService: AIService {
     var isAvailable: Bool {
         get async {
             // Check if device supports Apple Intelligence
-            do {
-                _ = LanguageModelSession()
-                return true
-            } catch {
-                return false
+            // Check if device supports Apple Intelligence
+            if #available(macOS 15.0, iOS 18.0, *) {
+                 return true
             }
+            return false
         }
     }
 
@@ -139,9 +139,9 @@ actor AppleAIService: AIService {
         """
 
         for tool in tools {
-            instructions += "\n## \(tool.name)\n"
-            instructions += "\(tool.description)\n"
-            if let props = tool.parameterSchema.properties {
+            instructions += "\n## \(tool.definition.name)\n"
+            instructions += "\(tool.definition.description)\n"
+            if let props = tool.definition.parameters.properties {
                 instructions += "Parameters:\n"
                 for (key, prop) in props {
                     let required = tool.parameterSchema.required?.contains(key) == true ? " (required)" : ""

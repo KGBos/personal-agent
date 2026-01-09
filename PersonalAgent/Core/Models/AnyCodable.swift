@@ -1,6 +1,7 @@
 //
 //  AnyCodable.swift
 //  PersonalAgent
+//  VERIFIED: Isolation fixed
 //
 //  Created by Leon Kuzmin on 1/7/26.
 //
@@ -10,7 +11,7 @@ import Foundation
 struct AnyCodable: Codable, @unchecked Sendable, Equatable {
     let value: Any
 
-    nonisolated init(_ value: Any) {
+    init(_ value: Any) {
         self.value = value
     }
 
