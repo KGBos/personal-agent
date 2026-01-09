@@ -18,6 +18,8 @@ struct ChatView: View {
     var body: some View {
         @Bindable var imageGenHandler = viewModel.imageGenerationHandler
 
+        
+
         return VStack(spacing: 0) {
             // Messages List
             messagesScrollView

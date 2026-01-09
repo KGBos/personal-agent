@@ -31,6 +31,7 @@ final class ImageGenerationHandler {
         }
 
         return false
+
     }
 
     /// Handles the result from the Image Playground sheet.

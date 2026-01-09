@@ -12,6 +12,7 @@ import UIKit
 import AppKit
 #endif
 
+
 struct ToolResultBubble: View {
     let result: ToolResult
     @State private var isExpanded = false
@@ -109,6 +110,7 @@ struct ToolResultBubble: View {
                 .padding(8)
             }
         }
+
     }
 
     private var truncatedContent: String {

@@ -17,6 +17,15 @@ enum PermissionType: String, CaseIterable, Sendable {
         case .automation: return "System Automation"
         }
     }
+    
+    var settingsURL: URL? {
+        switch self {
+        case .calendar: return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")
+        case .reminders: return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders")
+        case .contacts: return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Contacts")
+        case .automation: return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
+        }
+    }
 }
 
 enum PermissionStatus: Sendable {

@@ -64,7 +64,7 @@ final class ChatViewModel {
 
         setupHandlers()
     }
-
+    
     private func setupHandlers() {
         imageGenerationHandler.onImageSaved = { [weak self] url in
             guard let self else { return }
@@ -73,21 +73,21 @@ final class ChatViewModel {
             let message = Message.assistant("Image saved to: \(url.path)")
             self.messages.append(message)
             self.saveCurrentConversation()
-
             // Continue the conversation
             self.generateResponse()
         }
 
         imageGenerationHandler.onDismiss = { [weak self] in
             guard let self else { return }
-            // Just continue generation if dismissed without image, effectively considering it a completed step or maybe we should add a "cancelled" result?
+            // Just continue generation if dismissed without image.
+
             // For now, let's treat it as continue.
             self.generateResponse()
         }
     }
 
     // MARK: - Computed Properties
-
+    
     var canSend: Bool {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isLoading
     }

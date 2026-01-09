@@ -2,30 +2,31 @@ import Foundation
 
 struct CalendarCreateCalendarTool: AgentTool {
     let name = "calendar_create_calendar"
-    let description = "Create a new calendar with a specified name and optional color."
-    let requiresConfirmation = true
-
+    let description = "Creates a new calendar in the user's default event store (e.g. iCloud or Local)."
+    let requiresConfirmation = false
+    
     let parameterSchema = ToolParameterSchema(
         type: "object",
         description: nil,
         properties: [
-            "name": .init(type: "string", description: "Name of the new calendar", enumValues: nil, items: nil),
-            "color": .init(type: "string", description: "Optional: Hex color code for the calendar (e.g., '#FF0000')", enumValues: nil, items: nil)
+            "title": .init(type: "string", description: "The title of the new calendar.", enumValues: nil, items: nil),
+            "color": .init(type: "string", description: "Optional. A hex color string (e.g. '#FF0000').", enumValues: nil, items: nil)
         ],
-        required: ["name"]
+        required: ["title"]
     )
-
+    
     private let calendarService = CalendarService()
-
+    
     func execute(arguments: [String: Any]) async throws -> String {
-        guard let name = arguments["name"] as? String else {
-            throw ToolError.invalidArguments("Missing required parameter: name")
+        guard let title = arguments["title"] as? String else {
+            throw ToolError.invalidArguments("Missing required argument: title")
         }
-
+        
+        // Color support is optional in service for now
         let color = arguments["color"] as? String
-
-        let calendarId = try await calendarService.createCalendar(name: name, colorHex: color)
-
-        return "Created new calendar '\(name)' with ID: \(calendarId)"
+        
+        let calendarID = try await calendarService.createCalendar(title: title, colorHex: color)
+        
+        return "Successfully created calendar '\(title)' with ID: \(calendarID)"
     }
 }

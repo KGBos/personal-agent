@@ -208,11 +208,12 @@ actor AppleAIService: AIService {
             }
         }
 
-        // If no markdown blocks were found, or we want to be very aggressive,
-        // we could try to find standalone JSON objects, but for now we'll stick to
+        
+        // If no markdown blocks were found, or we want to be very aggressive, 
+        // we could try to find standalone JSON objects, but for now we'll stick to 
         // improving the markdown block parsing as per the plan.
-
-        // Fallback: If no tools found, check if the entire text looks like a JSON object
+        
+        // Fallback: If no tools found, check if the entire text looks like a JSON object 
         // and contains "tool" key, in case model forgot markdown fences.
         if toolCalls.isEmpty {
             if let toolCall = tryParseToolCall(from: text) {
@@ -222,28 +223,30 @@ actor AppleAIService: AIService {
 
         return toolCalls
     }
-
+    
     private static func tryParseToolCall(from jsonString: String) -> ToolCall? {
         let cleaned = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard cleaned.hasPrefix("{") && cleaned.hasSuffix("}") else { return nil }
-
+        
         guard let data = cleaned.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
-
+        
         // Check for required fields
         guard let toolName = json["tool"] as? String else { return nil }
-
+        
         // Arguments might be missing or empty
         let arguments = json["arguments"] as? [String: Any] ?? [:]
-
+        
         return ToolCall(
             id: "apple-\(UUID().uuidString.prefix(8))",
             name: toolName,
             argumentsDict: arguments
         )
     }
+
+
 
     // MARK: - Private Helpers
 

@@ -31,6 +31,9 @@ final class ToolRegistry {
         register(CalendarGetEventsTool())
         register(CalendarCreateEventTool())
         register(CalendarCreateCalendarTool())
+        register(CalendarCreateCalendarTool())
+        register(CalendarSetDefaultTool())
+
 
         // Reminders
         register(RemindersGetTool())

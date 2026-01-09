@@ -23,6 +23,15 @@ struct ErrorBanner: View {
                 .lineLimit(2)
 
             Spacer()
+            
+            if let onRetry {
+                Button("Retry") {
+                    onRetry()
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.bordered)
+                .tint(.red)
+            }
 
             if let onRetry {
                 Button("Retry") {
